@@ -20,7 +20,7 @@ You will need to supply a configuration for the server for your MCP Client. Here
     "cloud-foundry": {
       "command": "java",
       "args": [
-        "-Dtransport.mode=stdio", "-Dlogging.file.name=/Users/pcorby/Desktop/pulse.webmvc.log", "-jar" ,
+        "-Dtransport.mode=stdio", "-Dlogging.file.name=cloud-foundry-mcp.log", "-jar" ,
         "/path/to/cloud-foundry-mcp/target/cloud-foundry-mcp-0.0.1-SNAPSHOT.jar",
         "--server.port=8040"
       ],
