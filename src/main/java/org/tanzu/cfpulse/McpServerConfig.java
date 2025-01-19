@@ -93,7 +93,7 @@ public class McpServerConfig implements WebMvcConfigurer {
 				FunctionCallback.builder().
 						method("scaleApplication", CfFunctions.PulseScaleApplicationRequest.class).
 						targetObject(cfFunctions).
-						description("Scale the number of instances, memory, or disk size of an application. Instance, memory, and disk size arguments can be null").
+						description("Scale the number of instances, memory, or disk size of an application. Instances, memoryLimit, and diskLimit arguments can be null").
 						build(),
 				FunctionCallback.builder().
 						method("startApplication", CfFunctions.PulseStartApplicationRequest.class).

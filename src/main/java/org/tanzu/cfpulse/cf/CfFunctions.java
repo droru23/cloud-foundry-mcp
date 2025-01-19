@@ -1,6 +1,5 @@
 package org.tanzu.cfpulse.cf;
 
-import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 import org.cloudfoundry.operations.applications.ScaleApplicationRequest;
@@ -8,18 +7,9 @@ import org.cloudfoundry.operations.applications.StartApplicationRequest;
 import org.cloudfoundry.operations.applications.StopApplicationRequest;
 import org.cloudfoundry.operations.organizations.OrganizationSummary;
 import org.cloudfoundry.operations.spaces.SpaceSummary;
-import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
-import org.cloudfoundry.operations.organizations.OrganizationSummary;
-import org.springframework.ai.chat.model.ToolContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Description;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 @Component
 public class CfFunctions {
@@ -37,7 +27,7 @@ public class CfFunctions {
         return cloudFoundryOperations.applications().list().collectList().block();
     }
 
-    public record PulseScaleApplicationRequest(String applicationName, int instances, int diskLimit, int memoryLimit) {
+    public record PulseScaleApplicationRequest(String applicationName, Integer instances, Integer diskLimit, Integer memoryLimit) {
     }
 
     public void scaleApplication(PulseScaleApplicationRequest request) {
