@@ -9,8 +9,6 @@ import org.springframework.ai.mcp.server.transport.StdioServerTransport;
 import org.springframework.ai.mcp.server.transport.WebMvcSseServerTransport;
 import org.springframework.ai.mcp.spec.McpSchema;
 import org.springframework.ai.mcp.spec.ServerMcpTransport;
-import org.springframework.ai.mcp.spring.ToolHelper;
-import org.springframework.ai.model.function.FunctionCallback;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,95 +18,183 @@ import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.ServerResponse;
 import org.tanzu.cfpulse.cf.CfFunctions;
 
-import java.util.List;
-
 @Configuration
 @EnableWebMvc
 public class McpServerConfig implements WebMvcConfigurer {
 
-	private static final Logger logger = LoggerFactory.getLogger(McpServerConfig.class);
-	private final CfFunctions cfFunctions;
+    private static final Logger logger = LoggerFactory.getLogger(McpServerConfig.class);
+    private final CfFunctions cfFunctions;
 
-	public McpServerConfig(CfFunctions cfFunctions) {
-		this.cfFunctions = cfFunctions;
-	}
+    public McpServerConfig(CfFunctions cfFunctions) {
+        this.cfFunctions = cfFunctions;
+    }
 
-	@Bean
-	@ConditionalOnProperty(prefix = "transport", name = "mode", havingValue = "sse")
-	public WebMvcSseServerTransport webMvcSseServerTransport() {
-		return new WebMvcSseServerTransport(new ObjectMapper(), "/mcp/message");
-	}
+    @Bean
+    @ConditionalOnProperty(prefix = "transport", name = "mode", havingValue = "sse")
+    public WebMvcSseServerTransport webMvcSseServerTransport() {
+        return new WebMvcSseServerTransport(new ObjectMapper(), "/mcp/message");
+    }
 
-	@Bean
-	@ConditionalOnProperty(prefix = "transport", name = "mode", havingValue = "sse")
-	public RouterFunction<ServerResponse> routerFunction(WebMvcSseServerTransport transport) {
-		return transport.getRouterFunction();
-	}
+    @Bean
+    @ConditionalOnProperty(prefix = "transport", name = "mode", havingValue = "sse")
+    public RouterFunction<ServerResponse> routerFunction(WebMvcSseServerTransport transport) {
+        return transport.getRouterFunction();
+    }
 
-	@Bean
-	@ConditionalOnProperty(prefix = "transport", name = "mode", havingValue = "stdio")
-	public StdioServerTransport stdioServerTransport() {
-		return new StdioServerTransport();
-	}
+    @Bean
+    @ConditionalOnProperty(prefix = "transport", name = "mode", havingValue = "stdio")
+    public StdioServerTransport stdioServerTransport() {
+        return new StdioServerTransport();
+    }
 
-	@Bean
-	public McpAsyncServer mcpServer(ServerMcpTransport transport) {
+    @Bean
+    public McpAsyncServer mcpServer(ServerMcpTransport transport) {
 
-		var capabilities = McpSchema.ServerCapabilities.builder()
-			.resources(false, true) // No subscribe support, but list changes notifications
-			.tools(true) // Tool support with list changes notifications
-			.prompts(true) // Prompt support with list changes notifications
-			.logging() // Logging support
-			.build();
+        var capabilities = McpSchema.ServerCapabilities.builder()
+                .resources(false, false)
+                .tools(true) // Tool support with list changes notifications
+                .prompts(false)
+                .logging() // Logging support
+                .build();
 
-		// Create the server with both tool and resource capabilities
-		var server = McpServer.using(transport).
-				serverInfo("CF Pulse MCP Server", "1.0.0").
-				capabilities(capabilities).
-				tools(cfToolRegistrations()).
-				async();
-		
-		return server;
-	}
+        // Create the server with both tool and resource capabilities
+        var server = McpServer.using(transport).
+                serverInfo("CF Pulse MCP Server", "1.0.0").
+                capabilities(capabilities).
+                tools(applicationsListTool(), pushApplicationTool(), scaleApplicationTool(), startApplicationTool(),
+                        stopApplicationTool(),organizationsListTool(),spacesListTool()).
+                async();
 
-	public List<McpServer.ToolRegistration> cfToolRegistrations() {
+        return server;
+    }
 
-		return ToolHelper.toToolRegistration(
-				// Applications
-				FunctionCallback.builder().
-						method("applicationsList").
-						targetObject(cfFunctions).
-						description("Return the applications (apps) in my Cloud Foundry space").
-						build(),
-				FunctionCallback.builder().
-						method("scaleApplication", CfFunctions.PulseScaleApplicationRequest.class).
-						targetObject(cfFunctions).
-						description("Scale the number of instances, memory, or disk size of an application. Instances, memoryLimit, and diskLimit arguments can be null").
-						build(),
-				FunctionCallback.builder().
-						method("startApplication", CfFunctions.PulseStartApplicationRequest.class).
-						targetObject(cfFunctions).
-						description("Start a running Cloud Foundry application").
-						build(),
-				FunctionCallback.builder().
-						method("stopApplication", CfFunctions.PulseStopApplicationRequest.class).
-						targetObject(cfFunctions).
-						description("Stop a running Cloud Foundry application").
-						build(),
+    // Applications
+    private static final String DESCRIPTION_APPLICATION_LIST = "Return the applications (apps) in my Cloud Foundry space";
+    private McpServer.ToolRegistration applicationsListTool() {
+        return new McpServer.ToolRegistration(
+                new McpSchema.Tool("applicationsList", DESCRIPTION_APPLICATION_LIST,
+                        """
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                    },
+                                    "required": []
+                                }
+                                """),
+                cfFunctions.applcationsListFunction());
+    }
 
-				// Organizations
-				FunctionCallback.builder().
-						method("organizationsList").
-						targetObject(cfFunctions).
-						description("Return the organizations (orgs) in my Cloud Foundry foundation").
-						build(),
+    private static final String DESCRIPTION_PUSH_APPLICATION = "Pushes an application to the Cloud Foundry space.";
+    private McpServer.ToolRegistration pushApplicationTool() {
+        return new McpServer.ToolRegistration(new McpSchema.Tool("pushApplication", DESCRIPTION_PUSH_APPLICATION,
+                """
+                        {
+                        	"type": "object",
+                        	"properties": {
+                        		"name": {
+                        			"type": "string",
+                        			"description": "Name of the Cloud Foundry application"
+                        		},
+                        		"path": {
+                        			"type": "string",
+                        			"description": "Path to the compiled JAR file for the application"
+                        		}
+                        	},
+                        	"required": ["name", "path"]
+                        }
+                        """), cfFunctions.pushApplicationFunction());
+    }
 
-				// Spaces
-				FunctionCallback.builder().
-						method("spacesList").
-						targetObject(cfFunctions).
-						description("Returns the spaces in my Cloud Foundry organization (org)").
-						build()
-		);
-	}
+    private static final String DESCRIPTION_SCALE_APPLICATION = "Scale the number of instances, memory, or disk size of an application. ";
+    private McpServer.ToolRegistration scaleApplicationTool() {
+        return new McpServer.ToolRegistration(new McpSchema.Tool("scaleApplication", DESCRIPTION_SCALE_APPLICATION,
+                """
+                        {
+                        	"type": "object",
+                        	"properties": {
+                        		"name": {
+                        			"type": "string",
+                        			"description": "Name of the Cloud Foundry application"
+                        		},
+                        		"instances": {
+                        			"type": "number",
+                        			"description": "The new number of instances of the Cloud Foundry application"
+                        		},
+                        		"memory": {
+                        			"type": "number",
+                        			"description": "The new memory limit, in megabytes, of the Cloud Foundry application"
+                        		},
+                        		"disk": {
+                        			"type": "number",
+                        			"description": "The new disk size, in megabytes, of the Cloud Foundry application"
+                        		}
+                        	},
+                        	"required": ["name"]
+                        }
+                        """), cfFunctions.scaleApplicationFunction());
+    }
+
+    private static final String DESCRIPTION_START_APPLICATION = "Start a Cloud Foundry application";
+    private McpServer.ToolRegistration startApplicationTool() {
+        return new McpServer.ToolRegistration(new McpSchema.Tool("startApplication", DESCRIPTION_START_APPLICATION,
+                """
+                        {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "Name of the Cloud Foundry application"
+                                }
+                            },
+                            "required": ["name"]
+                        }
+                        """), cfFunctions.startApplicationFunction());
+    }
+
+    private static final String DESCRIPTION_STOP_APPLICATION = "Stop a running Cloud Foundry application";
+    private McpServer.ToolRegistration stopApplicationTool() {
+        return new McpServer.ToolRegistration(new McpSchema.Tool("stopApplication", DESCRIPTION_STOP_APPLICATION,
+                """
+                        {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "Name of the Cloud Foundry application"
+                                }
+                            },
+                            "required": ["name"]
+                        }
+                        """), cfFunctions.stopApplicationFunction());
+    }
+
+    private static final String DESCRIPTION_ORGANIZATION_LIST = "Return the organizations (orgs) in my Cloud Foundry foundation";
+    private McpServer.ToolRegistration organizationsListTool() {
+        return new McpServer.ToolRegistration(
+                new McpSchema.Tool("organizationsList", DESCRIPTION_ORGANIZATION_LIST,
+                        """
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                    },
+                                    "required": []
+                                }
+                                """),
+                cfFunctions.organizationsListFunction());
+    }
+
+    private static final String DESCRIPTION_SPACE_LIST = "Returns the spaces in my Cloud Foundry organization (org)";
+    private McpServer.ToolRegistration spacesListTool() {
+        return new McpServer.ToolRegistration(
+                new McpSchema.Tool("spacesList", DESCRIPTION_SPACE_LIST,
+                        """
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                    },
+                                    "required": []
+                                }
+                                """),
+                cfFunctions.spacesListFunction());
+    }
 }
