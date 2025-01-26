@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.mcp.server.McpAsyncServer;
 import org.springframework.ai.mcp.server.McpServer;
+import org.springframework.ai.mcp.server.McpServerFeatures;
 import org.springframework.ai.mcp.server.transport.StdioServerTransport;
 import org.springframework.ai.mcp.server.transport.WebMvcSseServerTransport;
 import org.springframework.ai.mcp.spec.McpSchema;
@@ -58,20 +59,19 @@ public class McpServerConfig implements WebMvcConfigurer {
                 .build();
 
         // Create the server with both tool and resource capabilities
-        var server = McpServer.using(transport).
+        var server = McpServer.async(transport).
                 serverInfo("CF Pulse MCP Server", "1.0.0").
                 capabilities(capabilities).
-                tools(applicationsListTool(), pushApplicationTool(), scaleApplicationTool(), startApplicationTool(),
+                tools(applicationsListTool(),pushApplicationTool(),scaleApplicationTool(),startApplicationTool(),
                         stopApplicationTool(),organizationsListTool(),spacesListTool()).
-                async();
-
+                build();
         return server;
     }
 
     // Applications
     private static final String DESCRIPTION_APPLICATION_LIST = "Return the applications (apps) in my Cloud Foundry space";
-    private McpServer.ToolRegistration applicationsListTool() {
-        return new McpServer.ToolRegistration(
+    private McpServerFeatures.AsyncToolRegistration applicationsListTool() {
+        return new McpServerFeatures.AsyncToolRegistration(
                 new McpSchema.Tool("applicationsList", DESCRIPTION_APPLICATION_LIST,
                         """
                                 {
@@ -81,12 +81,12 @@ public class McpServerConfig implements WebMvcConfigurer {
                                     "required": []
                                 }
                                 """),
-                cfFunctions.applcationsListFunction());
+                cfFunctions.applicationsListFunction());
     }
 
     private static final String DESCRIPTION_PUSH_APPLICATION = "Pushes an application to the Cloud Foundry space.";
-    private McpServer.ToolRegistration pushApplicationTool() {
-        return new McpServer.ToolRegistration(new McpSchema.Tool("pushApplication", DESCRIPTION_PUSH_APPLICATION,
+    private McpServerFeatures.AsyncToolRegistration pushApplicationTool() {
+        return new McpServerFeatures.AsyncToolRegistration(new McpSchema.Tool("pushApplication", DESCRIPTION_PUSH_APPLICATION,
                 """
                         {
                         	"type": "object",
@@ -102,12 +102,13 @@ public class McpServerConfig implements WebMvcConfigurer {
                         	},
                         	"required": ["name", "path"]
                         }
-                        """), cfFunctions.pushApplicationFunction());
+                        """),
+                cfFunctions.pushApplicationFunction());
     }
 
     private static final String DESCRIPTION_SCALE_APPLICATION = "Scale the number of instances, memory, or disk size of an application. ";
-    private McpServer.ToolRegistration scaleApplicationTool() {
-        return new McpServer.ToolRegistration(new McpSchema.Tool("scaleApplication", DESCRIPTION_SCALE_APPLICATION,
+    private McpServerFeatures.AsyncToolRegistration scaleApplicationTool() {
+        return new McpServerFeatures.AsyncToolRegistration(new McpSchema.Tool("scaleApplication", DESCRIPTION_SCALE_APPLICATION,
                 """
                         {
                         	"type": "object",
@@ -131,12 +132,13 @@ public class McpServerConfig implements WebMvcConfigurer {
                         	},
                         	"required": ["name"]
                         }
-                        """), cfFunctions.scaleApplicationFunction());
+                        """),
+                cfFunctions.scaleApplicationFunction());
     }
 
     private static final String DESCRIPTION_START_APPLICATION = "Start a Cloud Foundry application";
-    private McpServer.ToolRegistration startApplicationTool() {
-        return new McpServer.ToolRegistration(new McpSchema.Tool("startApplication", DESCRIPTION_START_APPLICATION,
+    private McpServerFeatures.AsyncToolRegistration startApplicationTool() {
+        return new McpServerFeatures.AsyncToolRegistration(new McpSchema.Tool("startApplication", DESCRIPTION_START_APPLICATION,
                 """
                         {
                             "type": "object",
@@ -148,12 +150,13 @@ public class McpServerConfig implements WebMvcConfigurer {
                             },
                             "required": ["name"]
                         }
-                        """), cfFunctions.startApplicationFunction());
+                        """),
+                cfFunctions.startApplicationFunction());
     }
 
     private static final String DESCRIPTION_STOP_APPLICATION = "Stop a running Cloud Foundry application";
-    private McpServer.ToolRegistration stopApplicationTool() {
-        return new McpServer.ToolRegistration(new McpSchema.Tool("stopApplication", DESCRIPTION_STOP_APPLICATION,
+    private McpServerFeatures.AsyncToolRegistration stopApplicationTool() {
+        return new McpServerFeatures.AsyncToolRegistration(new McpSchema.Tool("stopApplication", DESCRIPTION_STOP_APPLICATION,
                 """
                         {
                             "type": "object",
@@ -165,12 +168,13 @@ public class McpServerConfig implements WebMvcConfigurer {
                             },
                             "required": ["name"]
                         }
-                        """), cfFunctions.stopApplicationFunction());
+                        """),
+                cfFunctions.stopApplicationFunction());
     }
 
     private static final String DESCRIPTION_ORGANIZATION_LIST = "Return the organizations (orgs) in my Cloud Foundry foundation";
-    private McpServer.ToolRegistration organizationsListTool() {
-        return new McpServer.ToolRegistration(
+    private McpServerFeatures.AsyncToolRegistration organizationsListTool() {
+        return new McpServerFeatures.AsyncToolRegistration(
                 new McpSchema.Tool("organizationsList", DESCRIPTION_ORGANIZATION_LIST,
                         """
                                 {
@@ -184,8 +188,8 @@ public class McpServerConfig implements WebMvcConfigurer {
     }
 
     private static final String DESCRIPTION_SPACE_LIST = "Returns the spaces in my Cloud Foundry organization (org)";
-    private McpServer.ToolRegistration spacesListTool() {
-        return new McpServer.ToolRegistration(
+    private McpServerFeatures.AsyncToolRegistration spacesListTool() {
+        return new McpServerFeatures.AsyncToolRegistration(
                 new McpSchema.Tool("spacesList", DESCRIPTION_SPACE_LIST,
                         """
                                 {
