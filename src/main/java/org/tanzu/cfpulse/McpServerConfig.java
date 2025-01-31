@@ -3,7 +3,7 @@ package org.tanzu.cfpulse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.mcp.server.McpAsyncServer;
+import org.springframework.ai.mcp.server.McpSyncServer;
 import org.springframework.ai.mcp.server.McpServer;
 import org.springframework.ai.mcp.server.McpServerFeatures;
 import org.springframework.ai.mcp.server.transport.StdioServerTransport;
@@ -46,7 +46,7 @@ public class McpServerConfig {
     }
 
     @Bean
-    public McpAsyncServer mcpServer(ServerMcpTransport transport) {
+    public McpSyncServer mcpServer(ServerMcpTransport transport) {
 
         var capabilities = McpSchema.ServerCapabilities.builder()
                 .resources(false, false)
@@ -56,7 +56,7 @@ public class McpServerConfig {
                 .build();
 
         // Create the server with both tool and resource capabilities
-        var server = McpServer.async(transport).
+        var server = McpServer.sync(transport).
                 serverInfo("CF Pulse MCP Server", "1.0.0").
                 capabilities(capabilities).
                 tools(applicationsListTool(),pushApplicationTool(),scaleApplicationTool(),startApplicationTool(),
@@ -67,8 +67,8 @@ public class McpServerConfig {
 
     // Applications
     private static final String DESCRIPTION_APPLICATION_LIST = "Return the applications (apps) in my Cloud Foundry space";
-    private McpServerFeatures.AsyncToolRegistration applicationsListTool() {
-        return new McpServerFeatures.AsyncToolRegistration(
+    private McpServerFeatures.SyncToolRegistration applicationsListTool() {
+        return new McpServerFeatures.SyncToolRegistration(
                 new McpSchema.Tool("applicationsList", DESCRIPTION_APPLICATION_LIST,
                         """
                                 {
@@ -82,8 +82,8 @@ public class McpServerConfig {
     }
 
     private static final String DESCRIPTION_PUSH_APPLICATION = "Pushes an application to the Cloud Foundry space.";
-    private McpServerFeatures.AsyncToolRegistration pushApplicationTool() {
-        return new McpServerFeatures.AsyncToolRegistration(new McpSchema.Tool("pushApplication", DESCRIPTION_PUSH_APPLICATION,
+    private McpServerFeatures.SyncToolRegistration pushApplicationTool() {
+        return new McpServerFeatures.SyncToolRegistration(new McpSchema.Tool("pushApplication", DESCRIPTION_PUSH_APPLICATION,
                 """
                         {
                         	"type": "object",
@@ -104,8 +104,8 @@ public class McpServerConfig {
     }
 
     private static final String DESCRIPTION_SCALE_APPLICATION = "Scale the number of instances, memory, or disk size of an application. ";
-    private McpServerFeatures.AsyncToolRegistration scaleApplicationTool() {
-        return new McpServerFeatures.AsyncToolRegistration(new McpSchema.Tool("scaleApplication", DESCRIPTION_SCALE_APPLICATION,
+    private McpServerFeatures.SyncToolRegistration scaleApplicationTool() {
+        return new McpServerFeatures.SyncToolRegistration(new McpSchema.Tool("scaleApplication", DESCRIPTION_SCALE_APPLICATION,
                 """
                         {
                         	"type": "object",
@@ -134,8 +134,8 @@ public class McpServerConfig {
     }
 
     private static final String DESCRIPTION_START_APPLICATION = "Start a Cloud Foundry application";
-    private McpServerFeatures.AsyncToolRegistration startApplicationTool() {
-        return new McpServerFeatures.AsyncToolRegistration(new McpSchema.Tool("startApplication", DESCRIPTION_START_APPLICATION,
+    private McpServerFeatures.SyncToolRegistration startApplicationTool() {
+        return new McpServerFeatures.SyncToolRegistration(new McpSchema.Tool("startApplication", DESCRIPTION_START_APPLICATION,
                 """
                         {
                             "type": "object",
@@ -152,8 +152,8 @@ public class McpServerConfig {
     }
 
     private static final String DESCRIPTION_STOP_APPLICATION = "Stop a running Cloud Foundry application";
-    private McpServerFeatures.AsyncToolRegistration stopApplicationTool() {
-        return new McpServerFeatures.AsyncToolRegistration(new McpSchema.Tool("stopApplication", DESCRIPTION_STOP_APPLICATION,
+    private McpServerFeatures.SyncToolRegistration stopApplicationTool() {
+        return new McpServerFeatures.SyncToolRegistration(new McpSchema.Tool("stopApplication", DESCRIPTION_STOP_APPLICATION,
                 """
                         {
                             "type": "object",
@@ -170,8 +170,8 @@ public class McpServerConfig {
     }
 
     private static final String DESCRIPTION_ORGANIZATION_LIST = "Return the organizations (orgs) in my Cloud Foundry foundation";
-    private McpServerFeatures.AsyncToolRegistration organizationsListTool() {
-        return new McpServerFeatures.AsyncToolRegistration(
+    private McpServerFeatures.SyncToolRegistration organizationsListTool() {
+        return new McpServerFeatures.SyncToolRegistration(
                 new McpSchema.Tool("organizationsList", DESCRIPTION_ORGANIZATION_LIST,
                         """
                                 {
@@ -185,8 +185,8 @@ public class McpServerConfig {
     }
 
     private static final String DESCRIPTION_SPACE_LIST = "Returns the spaces in my Cloud Foundry organization (org)";
-    private McpServerFeatures.AsyncToolRegistration spacesListTool() {
-        return new McpServerFeatures.AsyncToolRegistration(
+    private McpServerFeatures.SyncToolRegistration spacesListTool() {
+        return new McpServerFeatures.SyncToolRegistration(
                 new McpSchema.Tool("spacesList", DESCRIPTION_SPACE_LIST,
                         """
                                 {
