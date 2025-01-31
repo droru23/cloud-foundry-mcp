@@ -24,12 +24,10 @@ public class CfFunctions {
         Applications
     */
     public Function<Map<String, Object>, Mono<McpSchema.CallToolResult>> applicationsListFunction() {
-        return arguments -> {
-            List<McpSchema.Content> textContents = cloudFoundryOperations.applications().list().
-                    <McpSchema.Content>map(applicationSummary -> new McpSchema.TextContent(applicationSummary.toString())).
-                    collectList().block();
-            return Mono.just(new McpSchema.CallToolResult(textContents, false));
-        };
+        return noArgs -> cloudFoundryOperations.applications().list().
+                        <McpSchema.Content>map(applicationSummary -> new McpSchema.TextContent(applicationSummary.toString())).
+                collectList().
+                map(textContents -> new McpSchema.CallToolResult(textContents, false));
     }
 
     public Function<Map<String, Object>, Mono<McpSchema.CallToolResult>> pushApplicationFunction() {
@@ -37,15 +35,21 @@ public class CfFunctions {
             String name = (String) arguments.get("name");
             String path = (String) arguments.get("path");
 
-            PushApplicationRequest.Builder builder = PushApplicationRequest.builder().name(name).path(Paths.get(path)).noStart(true).buildpack("java_buildpack_offline");
-            PushApplicationRequest request = builder.build();
-            cloudFoundryOperations.applications().push(request).block();
+            PushApplicationRequest request = PushApplicationRequest.builder().
+                    name(name).path(Paths.get(path)).noStart(true).buildpack("java_buildpack_offline").
+                    build();
             SetEnvironmentVariableApplicationRequest envRequest = SetEnvironmentVariableApplicationRequest.builder().
-                    name(name).variableName("JBP_CONFIG_OPEN_JDK_JRE").variableValue("{ jre: { version: 17.+ } }").build();
-            cloudFoundryOperations.applications().setEnvironmentVariable(envRequest).block();
-            StartApplicationRequest startApplicationRequest = StartApplicationRequest.builder().name(name).build();
-            cloudFoundryOperations.applications().start(startApplicationRequest).block();
-            return Mono.just(new McpSchema.CallToolResult(List.of(new McpSchema.TextContent("Done")), false));
+                    name(name).variableName("JBP_CONFIG_OPEN_JDK_JRE").variableValue("{ jre: { version: 17.+ } }").
+                    build();
+            StartApplicationRequest startApplicationRequest = StartApplicationRequest.builder().
+                    name(name).
+                    build();
+
+            return cloudFoundryOperations.applications().
+                    push(request).
+                    then(cloudFoundryOperations.applications().setEnvironmentVariable(envRequest)).
+                    then(cloudFoundryOperations.applications().start(startApplicationRequest)).
+                    then(Mono.just(new McpSchema.CallToolResult(List.of(new McpSchema.TextContent("Done")), false)));
         };
     }
 
@@ -62,8 +66,8 @@ public class CfFunctions {
                     diskLimit(disk).
                     memoryLimit(memory).
                     build();
-            cloudFoundryOperations.applications().scale(scaleApplicationRequest).block();
-            return Mono.just(new McpSchema.CallToolResult(List.of(new McpSchema.TextContent("Done")), false));
+            return cloudFoundryOperations.applications().scale(scaleApplicationRequest).
+                    then(Mono.just(new McpSchema.CallToolResult(List.of(new McpSchema.TextContent("Done")), false)));
         };
     }
 
@@ -74,8 +78,8 @@ public class CfFunctions {
             StartApplicationRequest startApplicationRequest = StartApplicationRequest.builder().
                     name(name).
                     build();
-            cloudFoundryOperations.applications().start(startApplicationRequest).block();
-            return Mono.just(new McpSchema.CallToolResult(List.of(new McpSchema.TextContent("Done")), false));
+            return cloudFoundryOperations.applications().start(startApplicationRequest).
+                    then(Mono.just(new McpSchema.CallToolResult(List.of(new McpSchema.TextContent("Done")), false)));
         };
     }
 
@@ -86,8 +90,8 @@ public class CfFunctions {
             StopApplicationRequest stopApplicationRequest = StopApplicationRequest.builder().
                     name(name).
                     build();
-            cloudFoundryOperations.applications().stop(stopApplicationRequest).block();
-            return Mono.just(new McpSchema.CallToolResult(List.of(new McpSchema.TextContent("Done")), false));
+            return cloudFoundryOperations.applications().stop(stopApplicationRequest).
+                    then(Mono.just(new McpSchema.CallToolResult(List.of(new McpSchema.TextContent("Done")), false)));
         };
     }
 
@@ -95,23 +99,19 @@ public class CfFunctions {
         Organizations
      */
     public Function<Map<String, Object>, Mono<McpSchema.CallToolResult>> organizationsListFunction() {
-        return arguments -> {
-            List<McpSchema.Content> textContents = cloudFoundryOperations.organizations().list().
-                            <McpSchema.Content>map(organizationSummary -> new McpSchema.TextContent(organizationSummary.toString())).
-                    collectList().block();
-            return Mono.just(new McpSchema.CallToolResult(textContents, false));
-        };
+        return noArgs -> cloudFoundryOperations.organizations().list().
+                        <McpSchema.Content>map(organizationSummary -> new McpSchema.TextContent(organizationSummary.toString())).
+                collectList().
+                map(textContents -> new McpSchema.CallToolResult(textContents, false));
     }
 
     /*
         Spaces
      */
     public Function<Map<String, Object>, Mono<McpSchema.CallToolResult>> spacesListFunction() {
-        return arguments -> {
-            List<McpSchema.Content> textContents = cloudFoundryOperations.spaces().list().
-                            <McpSchema.Content>map(spaceSummary -> new McpSchema.TextContent(spaceSummary.toString())).
-                    collectList().block();
-            return Mono.just(new McpSchema.CallToolResult(textContents, false));
-        };
+        return noArgs -> cloudFoundryOperations.spaces().list().
+                        <McpSchema.Content>map(spaceSummary -> new McpSchema.TextContent(spaceSummary.toString())).
+                collectList().
+        map( textContents -> new McpSchema.CallToolResult(textContents, false));
     }
 }
