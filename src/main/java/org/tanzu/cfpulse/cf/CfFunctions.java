@@ -95,6 +95,18 @@ public class CfFunctions {
         };
     }
 
+    public Function<Map<String, Object>, Mono<McpSchema.CallToolResult>> deleteApplicationFunction() {
+        return arguments -> {
+            String name = (String) arguments.get("name");
+
+            DeleteApplicationRequest deleteApplicationRequest = DeleteApplicationRequest.builder().
+                    name(name).
+                    build();
+            return cloudFoundryOperations.applications().delete(deleteApplicationRequest).
+                    then(Mono.just(new McpSchema.CallToolResult(List.of(new McpSchema.TextContent("Done")), false)));
+        };
+    }
+
     /*
         Organizations
      */

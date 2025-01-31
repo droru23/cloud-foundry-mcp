@@ -60,7 +60,7 @@ public class McpServerConfig {
                 serverInfo("CF Pulse MCP Server", "1.0.0").
                 capabilities(capabilities).
                 tools(applicationsListTool(),pushApplicationTool(),scaleApplicationTool(),startApplicationTool(),
-                        stopApplicationTool(),organizationsListTool(),spacesListTool()).
+                        stopApplicationTool(),deleteApplicationTool(),organizationsListTool(),spacesListTool()).
                 build();
         return server;
     }
@@ -167,6 +167,24 @@ public class McpServerConfig {
                         }
                         """),
                 cfFunctions.stopApplicationFunction());
+    }
+
+    private static final String DESCRIPTION_DELETE_APPLICATION = "Delete a Cloud Foundry application";
+    private McpServerFeatures.AsyncToolRegistration deleteApplicationTool() {
+        return new McpServerFeatures.AsyncToolRegistration(new McpSchema.Tool("deleteApplication", DESCRIPTION_DELETE_APPLICATION,
+                """
+                        {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "Name of the Cloud Foundry application"
+                                }
+                            },
+                            "required": ["name"]
+                        }
+                        """),
+                cfFunctions.deleteApplicationFunction());
     }
 
     private static final String DESCRIPTION_ORGANIZATION_LIST = "Return the organizations (orgs) in my Cloud Foundry foundation";
