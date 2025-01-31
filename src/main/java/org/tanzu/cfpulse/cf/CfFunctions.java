@@ -4,6 +4,7 @@ import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
 import org.cloudfoundry.operations.applications.*;
 import org.springframework.ai.mcp.spec.McpSchema;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.nio.file.Paths;
 import java.util.List;
@@ -29,7 +30,7 @@ public class CfFunctions {
                 map(textContents -> new McpSchema.CallToolResult(textContents, false));
     }
 
-    public Function<Map<String, Object>, McpSchema.CallToolResult> pushApplicationFunction() {
+    public Function<Map<String, Object>, Mono<McpSchema.CallToolResult>> pushApplicationFunction() {
         return arguments -> {
             String name = (String) arguments.get("name");
             String path = (String) arguments.get("path");
@@ -52,7 +53,7 @@ public class CfFunctions {
         };
     }
 
-    public Function<Map<String, Object>, McpSchema.CallToolResult> scaleApplicationFunction() {
+    public Function<Map<String, Object>, Mono<McpSchema.CallToolResult>> scaleApplicationFunction() {
         return arguments -> {
             String name = (String) arguments.get("name");
             Integer instances = (Integer) arguments.get("instances");
@@ -70,7 +71,7 @@ public class CfFunctions {
         };
     }
 
-    public Function<Map<String, Object>, McpSchema.CallToolResult> startApplicationFunction() {
+    public Function<Map<String, Object>, Mono<McpSchema.CallToolResult>> startApplicationFunction() {
         return arguments -> {
             String name = (String) arguments.get("name");
 
@@ -82,7 +83,7 @@ public class CfFunctions {
         };
     }
 
-    public Function<Map<String, Object>, McpSchema.CallToolResult> stopApplicationFunction() {
+    public Function<Map<String, Object>, Mono<McpSchema.CallToolResult>> stopApplicationFunction() {
         return arguments -> {
             String name = (String) arguments.get("name");
 
