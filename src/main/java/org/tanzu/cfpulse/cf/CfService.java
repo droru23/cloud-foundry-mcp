@@ -38,7 +38,10 @@ public class CfService {
     public void pushApplication(@ToolParam(description = NAME_PARAM) String applicationName,
                                 @ToolParam(description = PATH_PARAM) String path) {
         PushApplicationRequest request = PushApplicationRequest.builder().
-                name(applicationName).path(Paths.get(path)).noStart(true).buildpack("java_buildpack_offline").
+                name(applicationName).
+                path(Paths.get(path)).
+                noStart(true).
+                buildpack("java_buildpack_offline").
                 build();
         SetEnvironmentVariableApplicationRequest envRequest = SetEnvironmentVariableApplicationRequest.builder().
                 name(applicationName).variableName("JBP_CONFIG_OPEN_JDK_JRE").variableValue("{ jre: { version: 17.+ } }").
