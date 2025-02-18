@@ -42,9 +42,9 @@ public class CfService {
     }
 
 
-    private static final String PUSH_APPLICATION = "Push an application to the Cloud Foundry space.";
+    private static final String PUSH_APPLICATION = "Push an application JAR file to the Cloud Foundry space.";
     private static final String NAME_PARAM = "Name of the Cloud Foundry application";
-    private static final String PATH_PARAM = "Path to the compiled JAR file for the application";
+    private static final String PATH_PARAM = "Fully qualified directory pathname to the compiled JAR file for the application";
     private static final String NO_START_PARAM = "Set this flag to true if you want to explicitly prevent the app from starting after being pushed.";
 
     @Tool(description = PUSH_APPLICATION)
