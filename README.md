@@ -1,6 +1,6 @@
 # Cloud Foundry MCP Server
 
-This MCP Server provides an LLM interface for interacting with your Cloud Foundry foundation. It was built with the [Spring AI MCP](https://spring.io/blog/2024/12/11/spring-ai-mcp-announcement) project.
+This MCP Server provides an LLM interface for interacting with your Cloud Foundry foundation. It was built with the [Spring AI MCP](https://docs.spring.io/spring-ai-mcp/reference/spring-mcp.html) project.
 
 ![Sample](images/sample.png)
 

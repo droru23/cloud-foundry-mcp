@@ -194,6 +194,16 @@ public class CfService {
         cloudFoundryOperations.services().unbind(request).block();
     }
 
+    private static final String DELETE_SERVICE_INSTANCE = "Delete a Cloud Foundry service instance";
+
+    @Tool(description = DELETE_SERVICE_INSTANCE)
+    public void deleteServiceInstance(@ToolParam(description = SI_NAME_PARAM) String serviceInstanceName) {
+        DeleteServiceInstanceRequest request = DeleteServiceInstanceRequest.builder().
+                name(serviceInstanceName).
+                build();
+        cloudFoundryOperations.services().deleteInstance(request).block();
+    }
+
     /*
         Spaces
      */
