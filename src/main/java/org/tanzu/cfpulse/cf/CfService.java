@@ -1,5 +1,8 @@
 package org.tanzu.cfpulse.cf;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
 import org.cloudfoundry.operations.applications.*;
 import org.cloudfoundry.operations.organizations.OrganizationSummary;
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CfService {
@@ -169,17 +173,62 @@ public class CfService {
         return cloudFoundryOperations.services().listServiceOfferings(request).collectList().block();
     }
 
+    private static final String CREATE_SERVICE_INSTANCE = "Create a service instance in the Cloud Foundry space";
+
+    @Tool(description = CREATE_SERVICE_INSTANCE)
+    public void createServiceInstance(
+            @ToolParam(description = "Name for the new service instance") String serviceInstanceName,
+            @ToolParam(description = "Name of the service offering from the marketplace") String serviceOfferingName,
+            @ToolParam(description = "Name of the service plan") String planName,
+            @ToolParam(description = "JSON string of configuration parameters (optional)", required = false) String parameters,
+            @ToolParam(description = "List of tags to apply to the service instance (optional)", required = false) List<String> tags) {
+        
+        CreateServiceInstanceRequest.Builder requestBuilder = CreateServiceInstanceRequest.builder()
+                .serviceInstanceName(serviceInstanceName)
+                .serviceName(serviceOfferingName)
+                .planName(planName);
+                
+        if (parameters != null && !parameters.isEmpty()) {
+            try {
+                // Convert JSON string to Map
+                Map<String, Object> paramMap = new ObjectMapper().readValue(parameters, new TypeReference<Map<String, Object>>() {});
+                requestBuilder.parameters(paramMap);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Failed to parse service instance parameters JSON", e);
+            }
+        }
+        
+        if (tags != null && !tags.isEmpty()) {
+            requestBuilder.tags(tags);
+        }
+        
+        cloudFoundryOperations.services().createInstance(requestBuilder.build()).block();
+    }
+
     private static final String BIND_SERVICE_INSTANCE = "Bind a service instance to a Cloud Foundry application";
     private static final String SI_NAME_PARAM = "Name of the Cloud Foundry service instance";
 
     @Tool(description = BIND_SERVICE_INSTANCE)
-    public void bindServiceInstance(@ToolParam(description = SI_NAME_PARAM) String serviceInstanceName,
-                                    @ToolParam(description = NAME_PARAM) String applicationName) {
-        BindServiceInstanceRequest request = BindServiceInstanceRequest.builder().
-                serviceInstanceName(serviceInstanceName).
-                applicationName(applicationName).
-                build();
-        cloudFoundryOperations.services().bind(request).block();
+    public void bindServiceInstance(
+            @ToolParam(description = SI_NAME_PARAM) String serviceInstanceName,
+            @ToolParam(description = NAME_PARAM) String applicationName,
+            @ToolParam(description = "JSON string of binding parameters (optional)", required = false) String parameters) {
+        
+        BindServiceInstanceRequest.Builder requestBuilder = BindServiceInstanceRequest.builder()
+                .serviceInstanceName(serviceInstanceName)
+                .applicationName(applicationName);
+                
+        if (parameters != null && !parameters.isEmpty()) {
+            try {
+                // Convert JSON string to Map
+                Map<String, Object> paramMap = new ObjectMapper().readValue(parameters, new TypeReference<Map<String, Object>>() {});
+                requestBuilder.parameters(paramMap);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Failed to parse binding parameters JSON", e);
+            }
+        }
+        
+        cloudFoundryOperations.services().bind(requestBuilder.build()).block();
     }
 
     private static final String UNBIND_SERVICE_INSTANCE = "Unbind a service instance from a Cloud Foundry application";
@@ -202,6 +251,75 @@ public class CfService {
                 name(serviceInstanceName).
                 build();
         cloudFoundryOperations.services().deleteInstance(request).block();
+    }
+
+    private static final String CREATE_SERVICE_KEY = "Create a service key for a Cloud Foundry service instance";
+    private static final String SERVICE_KEY_NAME_PARAM = "Name of the service key";
+
+    @Tool(description = CREATE_SERVICE_KEY)
+    public void createServiceKey(
+            @ToolParam(description = SI_NAME_PARAM) String serviceInstanceName,
+            @ToolParam(description = SERVICE_KEY_NAME_PARAM) String serviceKeyName,
+            @ToolParam(description = "JSON string of parameters for the service key (optional)", required = false) String parameters) {
+        
+        CreateServiceKeyRequest.Builder requestBuilder = CreateServiceKeyRequest.builder()
+                .serviceInstanceName(serviceInstanceName)
+                .serviceKeyName(serviceKeyName);
+                
+        if (parameters != null && !parameters.isEmpty()) {
+            try {
+                // Convert JSON string to Map
+                Map<String, Object> paramMap = new ObjectMapper().readValue(parameters, new TypeReference<Map<String, Object>>() {});
+                requestBuilder.parameters(paramMap);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Failed to parse service key parameters JSON", e);
+            }
+        }
+        
+        cloudFoundryOperations.services().createServiceKey(requestBuilder.build()).block();
+    }
+
+    private static final String LIST_SERVICE_KEYS = "List all service keys for a Cloud Foundry service instance";
+
+    @Tool(description = LIST_SERVICE_KEYS)
+    public List<ServiceKey> listServiceKeys(
+            @ToolParam(description = SI_NAME_PARAM) String serviceInstanceName) {
+        
+        ListServiceKeysRequest request = ListServiceKeysRequest.builder()
+                .serviceInstanceName(serviceInstanceName)
+                .build();
+                
+        return cloudFoundryOperations.services().listServiceKeys(request).collectList().block();
+    }
+
+    private static final String GET_SERVICE_KEY = "Get details of a specific service key";
+
+    @Tool(description = GET_SERVICE_KEY)
+    public ServiceKey getServiceKey(
+            @ToolParam(description = SI_NAME_PARAM) String serviceInstanceName,
+            @ToolParam(description = SERVICE_KEY_NAME_PARAM) String serviceKeyName) {
+        
+        GetServiceKeyRequest request = GetServiceKeyRequest.builder()
+                .serviceInstanceName(serviceInstanceName)
+                .serviceKeyName(serviceKeyName)
+                .build();
+                
+        return cloudFoundryOperations.services().getServiceKey(request).block();
+    }
+
+    private static final String DELETE_SERVICE_KEY = "Delete a service key from a Cloud Foundry service instance";
+
+    @Tool(description = DELETE_SERVICE_KEY)
+    public void deleteServiceKey(
+            @ToolParam(description = SI_NAME_PARAM) String serviceInstanceName,
+            @ToolParam(description = SERVICE_KEY_NAME_PARAM) String serviceKeyName) {
+        
+        DeleteServiceKeyRequest request = DeleteServiceKeyRequest.builder()
+                .serviceInstanceName(serviceInstanceName)
+                .serviceKeyName(serviceKeyName)
+                .build();
+                
+        cloudFoundryOperations.services().deleteServiceKey(request).block();
     }
 
     /*
